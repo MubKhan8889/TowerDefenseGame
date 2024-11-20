@@ -1,11 +1,11 @@
 ﻿struct TileChance
 {
-    public TileDisplay Tile { get; }
+    public byte TileID { get; }
     public int Weight { get; }
 
-    public TileChance(TileDisplay setTile, int setWeight = 1)
+    public TileChance(byte setTileID, int setWeight = 1)
     {
-        Tile = setTile;
+        TileID = setTileID;
         Weight = setWeight;
     }
 }

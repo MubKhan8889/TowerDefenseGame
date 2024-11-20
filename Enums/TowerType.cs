@@ -1,0 +1,5 @@
+﻿enum TowerType
+{
+    Basic,
+    Cannon
+}
