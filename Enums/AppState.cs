@@ -2,5 +2,6 @@
 {
     Menu,
     Game,
+    GameEnd,
     Exit
 }

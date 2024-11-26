@@ -1,65 +1,24 @@
 ﻿using System.Drawing;
 
+// Misc
+Data GameData = new Data();
+
 // States
 AppState appState = AppState.Menu;
 GameState gameState = GameState.Preparation;
-
-// Data
-List<MapData> allMapData = new List<MapData>
-{
-    new MapData(
-        "TestMap",
-        Difficulty.Easy,
-        new Point(24, 18),
-
-        new List<TileChance>
-        {
-            new TileChance(0, 7),
-            new TileChance(11, 5),
-            new TileChance(31, 1),
-        },
-
-        new List<Point>
-        {
-            new Point(0, 3),
-            new Point(19, 3),
-            new Point(19, 9),
-            new Point(2, 9),
-            new Point(2, 15),
-            new Point(19, 15)
-        }
-    )
-};
-
-List<TowerData> allTowerData = new List<TowerData>
-{
-    new TowerData("Basic",
-        61,
-        TowerType.Basic,
-        200,
-        10,
-        6,
-        4)
-};
 
 // Classes
 ConsoleDisplay consoleDisplay = new ConsoleDisplay();
 Validator validator = new Validator();
 Game game = new Game();
 
-// Misc
-// For the mapTileDisplay
-//      0 = Nothing
-//      1X - 5X = Ground Display
-//      6X - 10X = Tower Display
-//      11X - 15X = Enemy Display
-//      25X = Misc
-
 List<string> acceptableAppStates = new List<string> { "Play", "Exit" };
-List<string> acceptableGameStates = new List<string> { "Place", "Sell", "Play" };
+List<string> acceptableGameStates = new List<string> { "Place", "Sell", "Start" };
 List<string> acceptableMoveChoices = new List<string> { "W", "A", "S", "D" };
+List<string> acceptablePlaceChoices = new List<string> { "Cancel", "Confirm" };
 List<string> acceptableTowerChoices = new List<string> { "None" };
-foreach (TowerData getTowerData in allTowerData) acceptableTowerChoices.Add(getTowerData.Name.ToLower());
+List<string> acceptableSellChoices = new List<string> { "Next", "Previous", "Confirm", "Cancel" };
+foreach (TowerData getTowerData in GameData.AllTowerData) acceptableTowerChoices.Add(getTowerData.Name.ToLower());
 
 Dictionary<string, AppState> inputToAppState = new Dictionary<string, AppState>
 {
@@ -81,6 +40,7 @@ while (appState != AppState.Exit)
 
     if (appState == AppState.Menu) MainMenuStateFunc();
     else if (appState == AppState.Game) GameStateFunc();
+    else if (appState == AppState.GameEnd) GameEndFunc();
 }
 
 // Game Function
@@ -94,6 +54,7 @@ void MainMenuStateFunc()
         "Exit - Exit application"
     });
 
+    Console.Write("\n");
     string input = StringInput("Option: ").ToLower();
 
     if (input == "")
@@ -108,7 +69,7 @@ void MainMenuStateFunc()
     {
         appState = inputToAppState[input];
 
-        if (appState == AppState.Game) game.SetMapData(allMapData[0]);
+        if (appState == AppState.Game) game.SetMapData(0);
     }
     else
     {
@@ -134,6 +95,7 @@ void GameStateFunc()
 // Preparation
 void GameStatePreparation()
 {
+    game.SetUpMapOverlay();
     game.DisplayMap();
     game.DisplayGameInfo();
 
@@ -146,6 +108,7 @@ void GameStatePreparation()
         "Start - Start the round"
     });
 
+    Console.Write("\n");
     string input = StringInput("Option: ").ToLower();
 
     if (validator.ValidStringOption(input, acceptableGameStates))
@@ -153,6 +116,7 @@ void GameStatePreparation()
         gameState = inputToGameState[input];
 
         if (gameState == GameState.Placing) game.SetGamePlacing();
+        if (gameState == GameState.Selling) game.SetGameSelling();
     }
     else
     {
@@ -166,6 +130,7 @@ void GameStatePreparation()
 // Placing
 void GameStatePlacing()
 {
+    game.SetUpMapOverlay();
     game.DisplayMap();
     game.DisplayGameInfo();
 
@@ -177,8 +142,12 @@ void GameStatePlacingTowerChoose()
 {
     Console.Write("\n");
     consoleDisplay.SubTitle("Towers");
-    foreach (TowerData getTowerData in allTowerData) consoleDisplay.TowerOption(getTowerData);
-    Console.WriteLine("None - Cancel Placement");
+    foreach (TowerData getTowerData in GameData.AllTowerData) consoleDisplay.TowerOption(getTowerData);
+    consoleDisplay.List(new List<string>()
+    {
+        "None - Cancel Placement",
+        "Confirm - Place Tower"
+    });
 
     string input = StringInput("Tower: ").ToLower();
 
@@ -190,10 +159,11 @@ void GameStatePlacingTowerChoose()
             return;
         }
 
-        IEnumerable<string> findName = allTowerData.Select(s => s.Name);
-        if (findName.Count() == 1)
+        IEnumerable<TowerData> findTower = GameData.AllTowerData.Select(n => n).Where(n => n.Name.ToLower() == input);
+        if (findTower.Count() == 1)
         {
             game.SetIsPlacing(true);
+            game.SetTowerSelectName(findTower.First().Name);
             return;
         }
     }
@@ -213,22 +183,56 @@ void GameStatePlacingTowerPlace()
     Console.Write("\n");
     consoleDisplay.SubTitle("Placing");
     Console.WriteLine("Type any number, and then one of the letters of the following: W, A, S or D");
-    Console.WriteLine("W moves up\nA moves to the left\nS moves down\nD moves to the right");
-    
-    string input = StringInput("Move: ");
-
-    if (validator.ValidStringOption(Convert.ToString(input[input.Length - 1]), acceptableMoveChoices))
+    consoleDisplay.List(new List<string>()
     {
-        if (input == "none")
+        "W moves up",
+        "A moves to the left",
+        "S moves down",
+        "D moves to the right",
+        "Confirm - Place tower",
+        "Cancel - Cancel tower placement"
+    });
+    Console.Write("\n");
+    
+    string input = StringInput("Move: ").ToLower();
+    string inputDirection = Convert.ToString(input[input.Length - 1]);
+    if (validator.ValidStringOption(inputDirection, acceptableMoveChoices))
+    {
+        string inputMovement = input.Substring(0, input.Length - 1);
+        Point movement = new Point(0, 0);
+
+        switch (inputDirection)
         {
-            gameState = GameState.Preparation;
+            case "w": movement = new Point(0, -1 * Convert.ToInt32(inputMovement)); break;
+            case "a": movement = new Point(-1 * Convert.ToInt32(inputMovement), 0); break;
+            case "s": movement = new Point(0, 1 * Convert.ToInt32(inputMovement)); break;
+            case "d": movement = new Point(1 * Convert.ToInt32(inputMovement), 0); break;
+        }
+
+        if (movement == new Point(0, 0))
+        {
+            Console.WriteLine("Letter is invalid, please enter one of the letters last.");
+            Console.ReadLine();
+
             return;
         }
 
-        IEnumerable<string> findName = allTowerData.Select(s => s.Name);
-        if (findName.Count() == 1)
+        game.MoveTowerPlace(movement);
+    }
+    else if (validator.ValidStringOption(input, acceptablePlaceChoices))
+    {
+        if (input == "cancel")
         {
-            game.SetIsPlacing(true);
+            gameState = GameState.Preparation;
+
+            game.SetIsPlacing(false);
+            return;
+        }
+        else if (input == "confirm")
+        {
+            gameState = GameState.Preparation;
+
+            game.PlaceTower();
             return;
         }
     }
@@ -239,20 +243,88 @@ void GameStatePlacingTowerPlace()
 
         return;
     }
-
-    Console.ReadLine();
 }
 
 // Selling
 void GameStateSelling()
 {
+    game.SetUpMapOverlay();
+    game.DisplayMap();
+    game.DisplayGameInfo();
 
+    Console.Write("\n");
+    consoleDisplay.SubTitle("Selling");
+    consoleDisplay.Value("Tower Index", Convert.ToString(game.GetTowerIndex()));
+    consoleDisplay.List(new List<string>()
+    {
+        "Next - Next Index",
+        "Previous - Previous Index",
+        "Confirm - Sell Tower",
+        "Cancel - Cancel tower selling"
+    });
+
+    Console.Write("\n");
+    string input = StringInput("Option: ").ToLower();
+
+    if (validator.ValidStringOption(input, acceptableSellChoices))
+    {
+        if (input == "next")
+        {
+            game.NextTowerIndex();
+        }
+        else if (input == "previous")
+        {
+            game.PreviousTowerIndex();
+        }
+        else if (input == "confirm")
+        {
+            gameState = GameState.Preparation;
+            game.SellTower();
+            return;
+        }
+        else if (input == "cancel")
+        {
+            gameState = GameState.Preparation;
+            game.SetIsSelling(false);
+            return;
+        }
+    }
+    else
+    {
+        Console.WriteLine("Input is incorrect, please enter one of the options above.");
+        Console.ReadLine();
+
+        return;
+    }
 }
 
 // Round Playout
 void GameStateRound()
 {
+    game.StartRound();
 
+    if (game.GetGameEnd()) appState = AppState.GameEnd;
+    else                   gameState = GameState.Preparation;
+}
+
+// Game End
+void GameEndFunc()
+{
+    if (game.GetLives() <= 0)
+    {
+        consoleDisplay.GameEndText("Game Over");
+        Console.WriteLine("You ran out of all lives, and therefore your base was destroyed.");
+        Console.Write("\n");
+        Console.WriteLine($"You only made it to round {game.GetCurrentRound()}.");
+    }
+    else
+    {
+        consoleDisplay.GameEndText("Game Won");
+        Console.WriteLine("You survived all the enemies that were after you, and therefore your base is still intact");
+    }
+
+    Console.ReadLine();
+    appState = AppState.Menu;
 }
 
 // Other Functions

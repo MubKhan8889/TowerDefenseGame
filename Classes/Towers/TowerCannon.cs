@@ -4,12 +4,12 @@ class TowerCannon : TowerBase
 {
     public TowerCannon(TowerData useTowerData, Point setPosition) : base(useTowerData, setPosition) { }
 
-    public override void Attack()
+    public override void Attack(ref Enemy enemy)
     {
 
     }
 
-    public void AttackDisplay(ref byte[] MapDisplayOverlayData)
+    public override void AttackDisplay(ref byte[] MapDisplayOverlayData, Point mapSize, Point center)
     {
 
     }
