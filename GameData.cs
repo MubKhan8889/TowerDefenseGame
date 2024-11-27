@@ -73,9 +73,9 @@ sealed class Data
                     61,
                     TowerType.Basic,
                     200,
-                    20, // 10
+                    10,
                     6,
-                    1f) //2f
+                    2f)
             };
                 
             // Set enemy data

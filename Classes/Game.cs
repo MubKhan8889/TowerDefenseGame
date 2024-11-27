@@ -31,7 +31,7 @@ class Game
 
     // Placing Data
     private bool IsPlacing = false;
-    private string TowerSelectName = "none";
+    private int TowerSelectIndex = -1;
     private int placingPosX = 0;
     private int placingPosY = 0;
 
@@ -181,7 +181,7 @@ class Game
     public void SetGamePlacing()
     {
         IsPlacing = false;
-        TowerSelectName = "None";
+        TowerSelectIndex = -1;
         placingPosX = 0;
         placingPosY = 0;
     }
@@ -200,13 +200,11 @@ class Game
 
     public void PlaceTower()
     {
-        IEnumerable<TowerData> getTowerData = GameData.AllTowerData.Select(n => n).Where(n => n.Name == GetTowerSelectName());
-        if (getTowerData.Count() != 1) return;
-
-        TowerData useTowerData = getTowerData.First();
+        TowerData useTowerData = GameData.AllTowerData[TowerSelectIndex];
 
         if (Money < useTowerData.Cost) return;
         Towers.Add(towerFactory.CreateTower(useTowerData, new Point(placingPosX, placingPosY)));
+        MapObstructionData[placingPosX + (MapSize.X * placingPosY)] = true;
         Money -= useTowerData.Cost;
 
         SetGamePlacing();
@@ -214,6 +212,9 @@ class Game
 
     public void SellTower()
     {
+        Point towerPosition = Towers[TowerIndex].GetPosition();
+        MapObstructionData[towerPosition.X + (MapSize.X * towerPosition.Y)] = false;
+
         Money += (int)(Towers[TowerIndex].GetCost() * 0.75f);
         Towers.RemoveAt(TowerIndex);
 
@@ -332,7 +333,7 @@ class Game
 
     // Get and Set
     public bool GetIsPlacing() { return IsPlacing; }
-    public string GetTowerSelectName() { return TowerSelectName; }
+    public int GetTowerSelectIndex() { return TowerSelectIndex; }
     public bool GetIsSelling() { return IsSelling; }
     public int GetTowerIndex() { return TowerIndex; }
     public int GetLives() { return Lives; }
@@ -340,6 +341,6 @@ class Game
     public int GetCurrentRound() { return CurrentRound; }
 
     public void SetIsPlacing(bool value) { IsPlacing = value; }
-    public void SetTowerSelectName(string name) { TowerSelectName = name; }
+    public void SetTowerSelectIndex(int index) { TowerSelectIndex = index - 1; }
     public void SetIsSelling(bool value) { IsSelling = value; }
 }

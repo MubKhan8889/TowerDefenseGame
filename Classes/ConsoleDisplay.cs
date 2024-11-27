@@ -48,9 +48,9 @@ class ConsoleDisplay
         Console.WriteLine(": " + value);
     }
 
-    public void TowerOption(TowerData useTowerData)
+    public void TowerOption(TowerData useTowerData, int index)
     {
-        Console.Write(useTowerData.Name + " - ");
+        Console.Write(index + " - ");
         Tile(useTowerData.DisplayID);
         Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine($" | Cost: {useTowerData.Cost}");

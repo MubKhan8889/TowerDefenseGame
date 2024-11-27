@@ -12,25 +12,26 @@ ConsoleDisplay consoleDisplay = new ConsoleDisplay();
 Validator validator = new Validator();
 Game game = new Game();
 
-List<string> acceptableAppStates = new List<string> { "Play", "Exit" };
-List<string> acceptableGameStates = new List<string> { "Place", "Sell", "Start" };
+List<string> acceptableAppStates = new List<string> { "P", "E" }; // Play, Exit
+List<string> acceptableGameStates = new List<string> { "P", "S", "R" }; // Place, Sell, Start
 List<string> acceptableMoveChoices = new List<string> { "W", "A", "S", "D" };
-List<string> acceptablePlaceChoices = new List<string> { "Cancel", "Confirm" };
-List<string> acceptableTowerChoices = new List<string> { "None" };
-List<string> acceptableSellChoices = new List<string> { "Next", "Previous", "Confirm", "Cancel" };
+List<string> acceptablePlaceChoices = new List<string> { "N", "C" }; // Cancel, Confirm
+List<string> acceptableTowerChoices = new List<string> { "N" };  // None
+List<string> acceptableSellChoices = new List<string> { "N", "P", "C", "S" }; // Next, Previous, Confirm, Cancel
+for (int i = 0; i < GameData.AllTowerData.Count; i++) acceptableTowerChoices.Add(Convert.ToString(i + 1));
 foreach (TowerData getTowerData in GameData.AllTowerData) acceptableTowerChoices.Add(getTowerData.Name.ToLower());
 
 Dictionary<string, AppState> inputToAppState = new Dictionary<string, AppState>
 {
-    { "play", AppState.Game },
-    { "exit", AppState.Exit }
+    { "p", AppState.Game },
+    { "e", AppState.Exit }
 };
 
 Dictionary<string, GameState> inputToGameState = new Dictionary<string, GameState>
 {
-    { "place", GameState.Placing },
-    { "sell", GameState.Selling },
-    { "start", GameState.Round }
+    { "p", GameState.Placing },
+    { "s", GameState.Selling },
+    { "r", GameState.Round }
 };
 
 // --== THE APPLICATION ==-- //
@@ -50,8 +51,8 @@ void MainMenuStateFunc()
 
     consoleDisplay.List(new List<string>()
     {
-        "Play - Start a game",
-        "Exit - Exit application"
+        "P - Start a game",
+        "E - Exit application"
     });
 
     Console.Write("\n");
@@ -64,8 +65,7 @@ void MainMenuStateFunc()
 
         return;
     }
-
-    if (validator.ValidStringOption(input, acceptableAppStates))
+    else if (validator.ValidStringOption(input, acceptableAppStates))
     {
         appState = inputToAppState[input];
 
@@ -103,9 +103,9 @@ void GameStatePreparation()
     consoleDisplay.SubTitle("Option");
     consoleDisplay.List(new List<string>()
     {
-        "Place - Place a tower",
-        "Sell - Sell a tower",
-        "Start - Start the round"
+        "P - Place a tower",
+        "S - Sell a tower",
+        "R - Start the round"
     });
 
     Console.Write("\n");
@@ -142,30 +142,26 @@ void GameStatePlacingTowerChoose()
 {
     Console.Write("\n");
     consoleDisplay.SubTitle("Towers");
-    foreach (TowerData getTowerData in GameData.AllTowerData) consoleDisplay.TowerOption(getTowerData);
-    consoleDisplay.List(new List<string>()
-    {
-        "None - Cancel Placement",
-        "Confirm - Place Tower"
-    });
+    for (int i = 0; i < GameData.AllTowerData.Count; i++) consoleDisplay.TowerOption(GameData.AllTowerData[i], i + 1);
+    Console.WriteLine("N - Cancel Placement");
+    Console.Write("\n");
 
     string input = StringInput("Tower: ").ToLower();
 
     if (validator.ValidStringOption(input, acceptableTowerChoices))
     {
-        if (input == "none")
+        if (input == "n")
         {
             gameState = GameState.Preparation;
             return;
         }
 
-        IEnumerable<TowerData> findTower = GameData.AllTowerData.Select(n => n).Where(n => n.Name.ToLower() == input);
-        if (findTower.Count() == 1)
-        {
-            game.SetIsPlacing(true);
-            game.SetTowerSelectName(findTower.First().Name);
-            return;
-        }
+        int towerIndex = Convert.ToInt32(input);
+        TowerData findTower = GameData.AllTowerData[towerIndex - 1];
+
+        game.SetIsPlacing(true);
+        game.SetTowerSelectIndex(towerIndex);
+        return;
     }
     else
     {
@@ -189,8 +185,8 @@ void GameStatePlacingTowerPlace()
         "A moves to the left",
         "S moves down",
         "D moves to the right",
-        "Confirm - Place tower",
-        "Cancel - Cancel tower placement"
+        "C - Place tower",
+        "N - Cancel tower placement"
     });
     Console.Write("\n");
     
@@ -221,14 +217,14 @@ void GameStatePlacingTowerPlace()
     }
     else if (validator.ValidStringOption(input, acceptablePlaceChoices))
     {
-        if (input == "cancel")
+        if (input == "n")
         {
             gameState = GameState.Preparation;
 
             game.SetIsPlacing(false);
             return;
         }
-        else if (input == "confirm")
+        else if (input == "c")
         {
             gameState = GameState.Preparation;
 
@@ -257,10 +253,10 @@ void GameStateSelling()
     consoleDisplay.Value("Tower Index", Convert.ToString(game.GetTowerIndex()));
     consoleDisplay.List(new List<string>()
     {
-        "Next - Next Index",
-        "Previous - Previous Index",
-        "Confirm - Sell Tower",
-        "Cancel - Cancel tower selling"
+        "N - Next Index",
+        "P - Previous Index",
+        "C - Sell Tower",
+        "S - Cancel tower selling"
     });
 
     Console.Write("\n");
@@ -268,21 +264,21 @@ void GameStateSelling()
 
     if (validator.ValidStringOption(input, acceptableSellChoices))
     {
-        if (input == "next")
+        if (input == "n")
         {
             game.NextTowerIndex();
         }
-        else if (input == "previous")
+        else if (input == "p")
         {
             game.PreviousTowerIndex();
         }
-        else if (input == "confirm")
+        else if (input == "c")
         {
             gameState = GameState.Preparation;
             game.SellTower();
             return;
         }
-        else if (input == "cancel")
+        else if (input == "s")
         {
             gameState = GameState.Preparation;
             game.SetIsSelling(false);
@@ -320,7 +316,7 @@ void GameEndFunc()
     else
     {
         consoleDisplay.GameEndText("Game Won");
-        Console.WriteLine("You survived all the enemies that were after you, and therefore your base is still intact");
+        Console.WriteLine("You survived all the enemies that were after you, and therefore your base is still intact.");
     }
 
     Console.ReadLine();
