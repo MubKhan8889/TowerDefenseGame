@@ -321,6 +321,7 @@ void GameEndFunc()
 
     Console.ReadLine();
     appState = AppState.Menu;
+    gameState = GameState.Preparation;
 }
 
 // Other Functions

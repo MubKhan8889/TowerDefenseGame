@@ -33,6 +33,7 @@ sealed class Data
                 { 31, new TileDisplay(",^", ConsoleColor.DarkGreen) },
                 { 61, new TileDisplay("(|") },
                 { 62, new TileDisplay("U)") },
+                { 63, new TileDisplay("H^") },
                 { 101, new TileDisplay("()", ConsoleColor.DarkGreen) },
                 { 253, new TileDisplay("XX", ConsoleColor.Yellow) },
                 { 254, new TileDisplay("##") },
@@ -75,7 +76,15 @@ sealed class Data
                     200,
                     10,
                     6,
-                    2f)
+                    2f),
+
+                new TowerData("Advanced",
+                    63,
+                    TowerType.Basic,
+                    500,
+                    5,
+                    10,
+                    0.5f)
             };
                 
             // Set enemy data
