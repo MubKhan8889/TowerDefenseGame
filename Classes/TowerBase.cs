@@ -4,6 +4,7 @@ class TowerBase
 {
     protected byte DisplayID;
     protected Point Position;
+    protected Point TargetPoint;
     protected int Cost;
 
     protected int Damage;
@@ -61,13 +62,19 @@ class TowerBase
         return (enemyIndex != -1) ? allEnemies[enemyIndex] : null;
     }
 
+    public void DamageEnemy(ref Enemy refEnemy)
+    {
+        refEnemy.TakeDamage(Damage);
+    }
+
     // Override
-    public virtual void Attack(ref Enemy enemy) { }
-    public virtual void AttackDisplay(ref byte[] MapDisplayOverlayData, Point mapSize, Point center) { }
+    public virtual bool DoAttack(ref List<Enemy> refEnemies) { return false; }
+    public virtual void AttackDisplay(ref byte[] MapDisplayOverlayData, Point mapSize) { }
 
     // Get and Set
     public byte GetDisplayID() { return DisplayID; }
     public Point GetPosition() { return Position; }
+    public Point GetTargetPoint() { return TargetPoint; }
     public int GetCost() { return Cost; }
     public int GetDamage() { return Damage; }
     public int GetRange() { return Range; }

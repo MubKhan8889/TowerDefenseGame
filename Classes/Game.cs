@@ -281,11 +281,10 @@ class Game
 
                 if (canAttack)
                 {
-                    Enemy? findEnemy = Towers[i].FindFurthestEnemy(ref Enemies);
-                    if (findEnemy == null) continue;
+                    bool attackSuccess = Towers[i].DoAttack(ref Enemies);
+                    if (attackSuccess == false) continue;
 
-                    Towers[i].Attack(ref findEnemy);
-                    Towers[i].AttackDisplay(ref MapDisplayOverlayData, MapSize, TrackProgressToPosition[findEnemy.GetCastedTrackProgress()]);
+                    Towers[i].AttackDisplay(ref MapDisplayOverlayData, MapSize);
                     Towers[i].ResetCooldown();
                 }
             }

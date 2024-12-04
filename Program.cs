@@ -69,7 +69,7 @@ void MainMenuStateFunc()
     {
         appState = inputToAppState[input];
 
-        if (appState == AppState.Game) game.SetMapData(0);
+        if (appState == AppState.Game) game.SetMapData(2);
     }
     else
     {
