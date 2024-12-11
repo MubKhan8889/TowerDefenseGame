@@ -1,11 +1,38 @@
 ﻿using System.Drawing;
+using System.Text.Json;
 
 // Misc
 Data GameData = new Data();
 
+// Data
+List<MapWonData> mapWonData = new List<MapWonData>();
+
+if (File.Exists("JSONDATA/MapWonData.json") == false) File.WriteAllText("JSONDATA/MapWonData.json", "");
+string mapWonJSON = File.ReadAllText("JSONDATA/MapWonData.json");
+
+if (mapWonJSON != "")
+{
+    JsonSerializerOptions jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+
+    var mapWonDeserialise = JsonSerializer.Deserialize<List<MapWonData>>(mapWonJSON, jsonOptions);
+    foreach (var data in mapWonDeserialise) mapWonData.Add(data);
+}
+else
+{
+    foreach (MapData mapData in GameData.AllMapData) mapWonData.Add(new MapWonData(mapData.Name, false, false, false));
+
+    JsonSerializerOptions jsonOptions = new JsonSerializerOptions();
+    jsonOptions.WriteIndented = true;
+
+    var mapWonSerialise = JsonSerializer.Serialize(mapWonData, jsonOptions);
+    File.WriteAllText("JSONDATA/MapWonData.json", mapWonSerialise);
+}
+
 // States
 AppState appState = AppState.Menu;
 GameState gameState = GameState.Preparation;
+
+bool choosingGame = false;
 
 // Classes
 ConsoleDisplay consoleDisplay = new ConsoleDisplay();
@@ -18,8 +45,10 @@ List<string> acceptableMoveChoices = new List<string> { "W", "A", "S", "D" };
 List<string> acceptablePlaceChoices = new List<string> { "N", "C" }; // Cancel, Confirm
 List<string> acceptableTowerChoices = new List<string> { "N" };  // None
 List<string> acceptableSellChoices = new List<string> { "N", "P", "C", "S" }; // Next, Previous, Confirm, Cancel
+List<string> acceptableDifficultyChoices = new List<string> { "E", "N", "H" }; // Easy, Normal, Hard
+List<string> acceptableMapChoices = new List<string> { };
 for (int i = 0; i < GameData.AllTowerData.Count; i++) acceptableTowerChoices.Add(Convert.ToString(i + 1));
-foreach (TowerData getTowerData in GameData.AllTowerData) acceptableTowerChoices.Add(getTowerData.Name.ToLower());
+for (int i = 0; i < GameData.AllMapData.Count; i++) acceptableMapChoices.Add(Convert.ToString(i + 1));
 
 Dictionary<string, AppState> inputToAppState = new Dictionary<string, AppState>
 {
@@ -32,6 +61,13 @@ Dictionary<string, GameState> inputToGameState = new Dictionary<string, GameStat
     { "p", GameState.Placing },
     { "s", GameState.Selling },
     { "r", GameState.Round }
+};
+
+Dictionary<string, Difficulty> inputToDifficulty = new Dictionary<string, Difficulty>
+{
+    { "e", Difficulty.Easy },
+    { "n", Difficulty.Normal },
+    { "h", Difficulty.Hard }
 };
 
 // --== THE APPLICATION ==-- //
@@ -47,6 +83,12 @@ while (appState != AppState.Exit)
 // Game Function
 void MainMenuStateFunc()
 {
+    if (choosingGame == false) MainMenuStateTitleScreen();
+    else if (choosingGame == true) MainMenuStateChoosingGame();
+}
+
+void MainMenuStateTitleScreen()
+{
     consoleDisplay.Title("Tower Defence Game");
 
     consoleDisplay.List(new List<string>()
@@ -58,22 +100,67 @@ void MainMenuStateFunc()
     Console.Write("\n");
     string input = StringInput("Option: ").ToLower();
 
-    if (input == "")
+    if (validator.ValidStringOption(input, acceptableAppStates))
     {
-        Console.WriteLine("Input is null, please enter something.");
+        if (input == "e") appState = AppState.Exit;
+        else if (input == "p") choosingGame = true;
+    }
+    else
+    {
+        if (input == "") consoleDisplay.Error("Input is null, please enter something.");
+        else             consoleDisplay.Error("Input is incorrect, please enter one of the options above.");
         Console.ReadLine();
 
         return;
     }
-    else if (validator.ValidStringOption(input, acceptableAppStates))
-    {
-        appState = inputToAppState[input];
+}
 
-        if (appState == AppState.Game) game.SetMapData(2);
+void MainMenuStateChoosingGame()
+{
+    consoleDisplay.Title("Tower Defence Game");
+    Console.WriteLine("Type in the number of the map you want to choose, and the letter of the difficulty you want to play the map on");
+
+    Console.Write("\n");
+    consoleDisplay.SubTitle("Maps");
+    for (int i = 0; i < GameData.AllMapData.Count; i++) Console.WriteLine(acceptableMapChoices[i] + " - " + GameData.AllMapData[i].Name);
+
+    Console.Write("\n");
+    consoleDisplay.SubTitle("Difficulties");
+    consoleDisplay.List(new List<string>()
+    {
+        "E - Easy",
+        "N - Normal",
+        "H - Hard"
+    });
+
+    consoleDisplay.SubTitle("Wins");
+    foreach(MapWonData getMapWonData in mapWonData) consoleDisplay.MapWin(getMapWonData);
+
+    Console.Write("\n");
+    string input = StringInput("Map & Difficulty: ").ToLower();
+
+    if (input.Length != 2)
+    {
+        consoleDisplay.Error("Input has to be exactly 2 letters long.");
+        Console.ReadLine();
+
+        return;
+    }
+
+    string mapChoice = Convert.ToString(input[0]);
+    string diffChoice = Convert.ToString(input[1]);
+
+    if (validator.ValidStringOption(mapChoice, acceptableMapChoices) && validator.ValidStringOption(diffChoice, acceptableDifficultyChoices))
+    {
+        choosingGame = false;
+
+        appState = AppState.Game;
+        game.SetMapData(Convert.ToInt32(mapChoice) - 1, inputToDifficulty[diffChoice]);
     }
     else
     {
-        Console.WriteLine("Input is incorrect, please enter one of the options above.");
+        if (input == "") consoleDisplay.Error("Input is null, please enter something.");
+        else             consoleDisplay.Error("Input is incorrect, the first letter is the map number and the second letter is the difficulty choice.");
         Console.ReadLine();
 
         return;
@@ -120,7 +207,8 @@ void GameStatePreparation()
     }
     else
     {
-        Console.WriteLine("Input is incorrect, please enter one of the options above.");
+        if (input == "") consoleDisplay.Error("Input is null, please enter something.");
+        else             consoleDisplay.Error("Input is incorrect, please enter one of the options above.");
         Console.ReadLine();
 
         return;
@@ -165,13 +253,12 @@ void GameStatePlacingTowerChoose()
     }
     else
     {
-        Console.WriteLine("Input is incorrect, please enter one of the options above.");
+        if (input == "") consoleDisplay.Error("Input is null, please enter something.");
+        else             consoleDisplay.Error("Input is incorrect, please enter one of the options above.");
         Console.ReadLine();
 
         return;
     }
-
-    Console.ReadLine();
 }
 
 void GameStatePlacingTowerPlace()
@@ -191,23 +278,43 @@ void GameStatePlacingTowerPlace()
     Console.Write("\n");
     
     string input = StringInput("Move: ").ToLower();
+
+    if (input == "")
+    {
+        consoleDisplay.Error("Input is null, please enter something.");
+        Console.ReadLine();
+
+        return;
+    }
+
     string inputDirection = Convert.ToString(input[input.Length - 1]);
     if (validator.ValidStringOption(inputDirection, acceptableMoveChoices))
     {
         string inputMovement = input.Substring(0, input.Length - 1);
         Point movement = new Point(0, 0);
 
-        switch (inputDirection)
+        try
         {
-            case "w": movement = new Point(0, -1 * Convert.ToInt32(inputMovement)); break;
-            case "a": movement = new Point(-1 * Convert.ToInt32(inputMovement), 0); break;
-            case "s": movement = new Point(0, 1 * Convert.ToInt32(inputMovement)); break;
-            case "d": movement = new Point(1 * Convert.ToInt32(inputMovement), 0); break;
+            switch (inputDirection)
+            {
+                case "w": movement = new Point(0, -1 * Convert.ToInt32(inputMovement)); break;
+                case "a": movement = new Point(-1 * Convert.ToInt32(inputMovement), 0); break;
+                case "s": movement = new Point(0, 1 * Convert.ToInt32(inputMovement)); break;
+                case "d": movement = new Point(1 * Convert.ToInt32(inputMovement), 0); break;
+            }
+        }
+        catch
+        {
+            if (inputMovement == "") consoleDisplay.Error("You need to have a number first before the letter.");
+            else                     consoleDisplay.Error("You should only have 1 letter for the direction.");
+            Console.ReadLine();
+
+            return;
         }
 
         if (movement == new Point(0, 0))
         {
-            Console.WriteLine("Letter is invalid, please enter one of the letters last.");
+            consoleDisplay.Error("Letter is invalid, please enter one of the letters last.");
             Console.ReadLine();
 
             return;
@@ -234,7 +341,7 @@ void GameStatePlacingTowerPlace()
     }
     else
     {
-        Console.WriteLine("Input is incorrect, please enter one of the options above.");
+        consoleDisplay.Error("Input is incorrect, please enter one of the options above.");
         Console.ReadLine();
 
         return;
@@ -287,7 +394,8 @@ void GameStateSelling()
     }
     else
     {
-        Console.WriteLine("Input is incorrect, please enter one of the options above.");
+        if (input == "") consoleDisplay.Error("Input is null, please enter something.");
+        else             consoleDisplay.Error("Input is incorrect, please enter one of the options above.");
         Console.ReadLine();
 
         return;
@@ -312,6 +420,9 @@ void GameEndFunc()
         Console.WriteLine("You ran out of all lives, and therefore your base was destroyed.");
         Console.Write("\n");
         Console.WriteLine($"You only made it to round {game.GetCurrentRound()}.");
+
+        if (File.Exists("mapsWon.json") == false) File.Create("mapsWon.json");
+
     }
     else
     {

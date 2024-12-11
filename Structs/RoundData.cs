@@ -1,8 +1,8 @@
 ﻿struct RoundData
 {
-    public int MoneyBonus { get; }
-    public int TotalEnemies { get; }
-    public List<EnemyRoundInfo> Enemies { get; }
+    public int MoneyBonus { get; set; }
+    public int TotalEnemies { get; set; }
+    public List<EnemyRoundInfo> Enemies { get; set; }
 
     public RoundData(int setMoneyBonus, List<EnemyRoundInfo> setEnemies)
     {

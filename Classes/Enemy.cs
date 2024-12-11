@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 
 class Enemy
 {
@@ -38,6 +39,14 @@ class Enemy
     {
         Health -= takeDamage;
         if (Health <= 0) IsDead = true;
+    }
+
+    public float DistanceFromPoint(Point point)
+    {
+        int xDiff = point.X - Position.X;
+        int yDiff = point.Y - Position.Y;
+
+        return MathF.Sqrt(MathF.Pow(xDiff, 2) + MathF.Pow(yDiff, 2));
     }
 
     // Get

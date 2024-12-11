@@ -2,11 +2,11 @@
 
 struct MapData
 {
-    public string Name { get; }
-    public Difficulty Difficulty { get; }
-    public Point MapSize { get; }
-    public List<TileChance> MapTiles { get; }
-    public List<Point> TrackPath { get; }
+    public string Name { get; set; }
+    public Difficulty Difficulty { get; set; }
+    public Point MapSize { get; set; }
+    public List<TileChance> MapTiles { get; set; }
+    public List<Point> TrackPath { get; set; }
 
     public MapData(string setName, Difficulty setDifficulty, Point setMapSize, List<TileChance> setTiles, List<Point> setTrack)
     {

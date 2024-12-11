@@ -1,7 +1,7 @@
 ﻿struct TileDisplay
 {
-    public string Display { get; }
-    public ConsoleColor Color { get; }
+    public string Display { get; set; }
+    public ConsoleColor Color { get; set; }
 
     public TileDisplay(string setDisplay, ConsoleColor setColor = ConsoleColor.White)
     {

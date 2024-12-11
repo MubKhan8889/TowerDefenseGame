@@ -55,4 +55,23 @@ class ConsoleDisplay
         Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine($" | Cost: {useTowerData.Cost}");
     }
+
+    public void MapWin(MapWonData getMapWonData)
+    {
+        Console.Write($"{getMapWonData.MapName} | ");
+        Console.ForegroundColor = (getMapWonData.EasyWin == true) ? ConsoleColor.DarkYellow : ConsoleColor.DarkGray;
+        Console.Write("X");
+        Console.ForegroundColor = (getMapWonData.NormalWin == true) ? ConsoleColor.Gray : ConsoleColor.DarkGray;
+        Console.Write("X");
+        Console.ForegroundColor = (getMapWonData.EasyWin == true) ? ConsoleColor.Yellow : ConsoleColor.DarkGray;
+        Console.WriteLine("X");
+        Console.ForegroundColor = ConsoleColor.White;
+    }
+
+    public void Error(string message)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.Write("ERROR: " + message);
+        Console.ForegroundColor = ConsoleColor.White;
+    }
 }

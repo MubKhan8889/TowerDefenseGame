@@ -1,8 +1,8 @@
 ﻿struct EnemyRoundInfo
 {
-    public int EnemyID { get; }
-    public int Amount { get; }
-    public float Interval { get; }
+    public int EnemyID { get; set; }
+    public int Amount { get; set; }
+    public float Interval { get; set; }
 
     public EnemyRoundInfo(int setEnemyID, int setAmount, float setInterval)
     {

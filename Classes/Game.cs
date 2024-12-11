@@ -23,7 +23,8 @@ class Game
     private int TrackLength;
 
     // Game Data
-    private int Money = 0;
+    private float Money = 0;
+    private float MoneyMult = 0;
     private int Lives = 0;
     private int CurrentRound = 0;
     private int FinalRound = 0;
@@ -44,7 +45,7 @@ class Game
     List<Enemy> Enemies = new List<Enemy>();
 
     // Functions
-    public void SetMapData(int mapDataIndex)
+    public void SetMapData(int mapDataIndex, Difficulty difficultySelect)
     {
         MapData useMapData = GameData.AllMapData[mapDataIndex];
 
@@ -110,9 +111,10 @@ class Game
         TrackLength = pathProgress;
 
         // Set up game info
-        Money = 500;
-        Lives = 100;
-        FinalRound = 10;
+        Money = GameData.DifficultyData[difficultySelect].StartMoney;
+        MoneyMult = GameData.DifficultyData[difficultySelect].MoneyMult;
+        Lives = GameData.DifficultyData[difficultySelect].Lives;
+        FinalRound = GameData.DifficultyData[difficultySelect].FinalRound;
         CurrentRound = 1;
         GameEnd = false;
     }
@@ -149,8 +151,12 @@ class Game
 
     public void SetUpMapOverlay()
     {
-        for (int i = 0; i < MapSize.X * MapSize.Y; i++) { MapDisplayOverlayData[i] = 0; MapColourOverrideData[i] = null; }
+        Parallel.For(0, MapSize.X * MapSize.Y, i =>
+        {
+            MapDisplayOverlayData[i] = 0; MapColourOverrideData[i] = null;
+        });
 
+        //for (int i = 0; i < MapSize.X * MapSize.Y; i++) { MapDisplayOverlayData[i] = 0; MapColourOverrideData[i] = null; }
         foreach (TowerBase tower in Towers)
         {
             Point towerPos = tower.GetPosition();
@@ -167,14 +173,9 @@ class Game
         Console.Write("\n");
         consoleDisplay.SubTitle("Info");
 
-        consoleDisplay.Value("Money", Convert.ToString(Money), ConsoleColor.Yellow);
+        consoleDisplay.Value("Money", Convert.ToString(Math.Round(Money)), ConsoleColor.Yellow);
         consoleDisplay.Value("Lives", Convert.ToString(Lives), ConsoleColor.Red);
         consoleDisplay.Value("Round", $"{CurrentRound}/{FinalRound}");
-    }
-
-    public void DisplayGameEnd()
-    {
-
     }
 
     // Game Options
@@ -259,7 +260,7 @@ class Game
                 if (Enemies[i].GetIsDead() == true)
                 {
                     if (Enemies[i].GetTrackProgress() >= TrackLength) Lives -= Enemies[i].GetDamage();
-                    else                                              Money += Enemies[i].GetMoneyReward();
+                    else                                              Money += Enemies[i].GetMoneyReward() * MoneyMult;
 
                     if (Lives <= 0) continue;
 
@@ -317,7 +318,7 @@ class Game
             DisplayMap();
             DisplayGameInfo();
 
-            Thread.Sleep(500);
+            Thread.Sleep(400);
         }
 
         if (CurrentRound == FinalRound || Lives <= 0)

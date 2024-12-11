@@ -26,7 +26,10 @@ class TowerBase
     // Base Functions
     public void ReduceCooldown(float interval)
     {
+        if (CurrentCooldown == 0f) return;
+
         CurrentCooldown -= interval;
+        if (CurrentCooldown < 0f) CurrentCooldown = 0f;
     }
 
     public void ResetCooldown()
@@ -41,25 +44,8 @@ class TowerBase
 
     public Enemy? FindFurthestEnemy(ref List<Enemy> allEnemies)
     {
-        float furthestDistance = 0;
-        int enemyIndex = -1;
-
-        for (int i = 0; i < allEnemies.Count; i++)
-        {
-            Enemy enemy = allEnemies[i];
-
-            int xDiff = enemy.GetPosition().X - Position.X;
-            int yDiff = enemy.GetPosition().Y - Position.Y;
-            float magnitude = MathF.Sqrt(MathF.Pow(xDiff, 2) + MathF.Pow(yDiff, 2));
-
-            if (enemy.GetTrackProgress() > furthestDistance && magnitude < Range && enemy.GetIsDead() == false)
-            {
-                furthestDistance = enemy.GetTrackProgress();
-                enemyIndex = i;
-            }
-        }
-
-        return (enemyIndex != -1) ? allEnemies[enemyIndex] : null;
+        IEnumerable<Enemy> enemiesByTrackProgress = allEnemies.Where(e => e.DistanceFromPoint(this.Position) <= this.Range).OrderBy(e => e.GetTrackProgress());
+        return (enemiesByTrackProgress.Count() != 0) ? enemiesByTrackProgress.Last() : null;
     }
 
     public void DamageEnemy(ref Enemy refEnemy)
