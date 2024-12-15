@@ -4,6 +4,9 @@ using System.Text.Json;
 
 sealed class Data
 {
+    // This class is meant to be accessed by other C# files without duplicating the data
+    // This was the resource I read from to create this class: https://csharpindepth.com/articles/singleton
+
     // Make unset variables first
     private static Lazy<bool> _isInitalised = new Lazy<bool>(() => false);
 
@@ -28,7 +31,7 @@ sealed class Data
 
         lock (_isInitalised)
         {
-            // --== SET ALL DATA ==-- //
+            // --== GET DATA FROM JSON AND SET ALL DATA ==-- //
             // Set map tile data
             Dictionary<byte, TileDisplay> setMapTileIDData = new Dictionary<byte, TileDisplay>();
 

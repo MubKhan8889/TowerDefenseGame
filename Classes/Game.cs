@@ -44,7 +44,7 @@ class Game
     List<TowerBase> Towers = new List<TowerBase>();
     List<Enemy> Enemies = new List<Enemy>();
 
-    // Functions
+    // --== MAIN FUNCTIONS ==-- //
     public void SetMapData(int mapDataIndex, Difficulty difficultySelect)
     {
         MapData useMapData = GameData.AllMapData[mapDataIndex];
@@ -119,7 +119,7 @@ class Game
         GameEnd = false;
     }
 
-    // Map Display
+    // --== MAP DISPLAY ==-- //
     public void DisplayMap()
     {
         for (int i = 0; i < MapSize.X * MapSize.Y; i++)
@@ -156,7 +156,6 @@ class Game
             MapDisplayOverlayData[i] = 0; MapColourOverrideData[i] = null;
         });
 
-        //for (int i = 0; i < MapSize.X * MapSize.Y; i++) { MapDisplayOverlayData[i] = 0; MapColourOverrideData[i] = null; }
         foreach (TowerBase tower in Towers)
         {
             Point towerPos = tower.GetPosition();
@@ -167,7 +166,7 @@ class Game
         }
     }
 
-    // Game display
+    // --== GAME ==-- //
     public void DisplayGameInfo()
     {
         Console.Write("\n");
@@ -178,7 +177,6 @@ class Game
         consoleDisplay.Value("Round", $"{CurrentRound}/{FinalRound}");
     }
 
-    // Game Options
     public void SetGamePlacing()
     {
         IsPlacing = false;
@@ -222,6 +220,11 @@ class Game
         IsSelling = false;
     }
 
+    public bool CanAffordTower(int index)
+    {
+        return Money >= GameData.AllTowerData[index - 1].Cost;
+    }
+
     public void NextTowerIndex()
     {
         TowerIndex++;
@@ -234,8 +237,10 @@ class Game
         if (TowerIndex < 0) TowerIndex = Towers.Count - 1;
     }
 
+    // --== ROUND PLAYOUT ==-- //
     public void StartRound()
     {
+        // Get round data
         RoundData roundInfoShortcut = GameData.AllRoundData[CurrentRound - 1];
 
         int currentEnemies = roundInfoShortcut.TotalEnemies;
@@ -246,6 +251,7 @@ class Game
         int enemyID = roundInfoShortcut.Enemies[0].EnemyID;
         int enemyAmount = roundInfoShortcut.Enemies[0].Amount;
 
+        // Playout the round
         while (currentEnemies > 0 && Lives > 0)
         {
             Console.Clear();
@@ -318,6 +324,7 @@ class Game
             DisplayMap();
             DisplayGameInfo();
 
+            // Wait, so the map and the display doesn't keep refreshing
             Thread.Sleep(400);
         }
 

@@ -63,7 +63,7 @@ class ConsoleDisplay
         Console.Write("X");
         Console.ForegroundColor = (getMapWonData.NormalWin == true) ? ConsoleColor.Gray : ConsoleColor.DarkGray;
         Console.Write("X");
-        Console.ForegroundColor = (getMapWonData.EasyWin == true) ? ConsoleColor.Yellow : ConsoleColor.DarkGray;
+        Console.ForegroundColor = (getMapWonData.HardWin == true) ? ConsoleColor.Yellow : ConsoleColor.DarkGray;
         Console.WriteLine("X");
         Console.ForegroundColor = ConsoleColor.White;
     }

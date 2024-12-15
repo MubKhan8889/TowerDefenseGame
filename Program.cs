@@ -1,12 +1,13 @@
 ﻿using System.Drawing;
 using System.Text.Json;
 
-// Misc
+// --== MISC ==-- //
 Data GameData = new Data();
 
-// Data
+// --== DATA ==-- //
 List<MapWonData> mapWonData = new List<MapWonData>();
 
+// This is to create a file for data to display what difficulties have been beaten for each map
 if (File.Exists("JSONDATA/MapWonData.json") == false) File.WriteAllText("JSONDATA/MapWonData.json", "");
 string mapWonJSON = File.ReadAllText("JSONDATA/MapWonData.json");
 
@@ -28,28 +29,32 @@ else
     File.WriteAllText("JSONDATA/MapWonData.json", mapWonSerialise);
 }
 
-// States
+// --== STATES ==-- //
 AppState appState = AppState.Menu;
 GameState gameState = GameState.Preparation;
 
 bool choosingGame = false;
+int selectedMapIndex = 0;
+Difficulty selectedDifficulty = Difficulty.Normal;
 
-// Classes
+// --== CLASSES ==-- //
 ConsoleDisplay consoleDisplay = new ConsoleDisplay();
 Validator validator = new Validator();
 Game game = new Game();
 
-List<string> acceptableAppStates = new List<string> { "P", "E" }; // Play, Exit
-List<string> acceptableGameStates = new List<string> { "P", "S", "R" }; // Place, Sell, Start
-List<string> acceptableMoveChoices = new List<string> { "W", "A", "S", "D" };
-List<string> acceptablePlaceChoices = new List<string> { "N", "C" }; // Cancel, Confirm
-List<string> acceptableTowerChoices = new List<string> { "N" };  // None
-List<string> acceptableSellChoices = new List<string> { "N", "P", "C", "S" }; // Next, Previous, Confirm, Cancel
-List<string> acceptableDifficultyChoices = new List<string> { "E", "N", "H" }; // Easy, Normal, Hard
+// This is so the user input can be checked by lists to check if they typed in a valid input
+List<string> acceptableAppStates = new List<string> { "p", "e" }; // Play, Exit
+List<string> acceptableGameStates = new List<string> { "p", "s", "r" }; // Place, Sell, Start
+List<string> acceptableMoveChoices = new List<string> { "w", "a", "s", "d" };
+List<string> acceptablePlaceChoices = new List<string> { "n", "c" }; // Cancel, Confirm
+List<string> acceptableTowerChoices = new List<string> { "n" };  // None
+List<string> acceptableSellChoices = new List<string> { "n", "p", "c", "s" }; // Next, Previous, Confirm, Cancel
+List<string> acceptableDifficultyChoices = new List<string> { "e", "n", "h" }; // Easy, Normal, Hard
 List<string> acceptableMapChoices = new List<string> { };
 for (int i = 0; i < GameData.AllTowerData.Count; i++) acceptableTowerChoices.Add(Convert.ToString(i + 1));
 for (int i = 0; i < GameData.AllMapData.Count; i++) acceptableMapChoices.Add(Convert.ToString(i + 1));
 
+// This is to convert the user input to these enums
 Dictionary<string, AppState> inputToAppState = new Dictionary<string, AppState>
 {
     { "p", AppState.Game },
@@ -80,7 +85,7 @@ while (appState != AppState.Exit)
     else if (appState == AppState.GameEnd) GameEndFunc();
 }
 
-// Game Function
+// --== MAIN MENU FUNCTION ==-- //
 void MainMenuStateFunc()
 {
     if (choosingGame == false) MainMenuStateTitleScreen();
@@ -133,6 +138,7 @@ void MainMenuStateChoosingGame()
         "H - Hard"
     });
 
+    Console.Write("\n");
     consoleDisplay.SubTitle("Wins");
     foreach(MapWonData getMapWonData in mapWonData) consoleDisplay.MapWin(getMapWonData);
 
@@ -154,8 +160,11 @@ void MainMenuStateChoosingGame()
     {
         choosingGame = false;
 
+        selectedMapIndex = Convert.ToInt32(mapChoice) - 1;
+        selectedDifficulty = inputToDifficulty[diffChoice];
+
+        game.SetMapData(selectedMapIndex, selectedDifficulty);
         appState = AppState.Game;
-        game.SetMapData(Convert.ToInt32(mapChoice) - 1, inputToDifficulty[diffChoice]);
     }
     else
     {
@@ -167,7 +176,7 @@ void MainMenuStateChoosingGame()
     }
 }
 
-// Game States
+// --== GAME STATES ==-- //
 void GameStateFunc()
 {
     switch(gameState)
@@ -179,7 +188,7 @@ void GameStateFunc()
     }
 }
 
-// Preparation
+// --== PREPARATION ==-- //
 void GameStatePreparation()
 {
     game.SetUpMapOverlay();
@@ -215,7 +224,7 @@ void GameStatePreparation()
     }
 }
 
-// Placing
+// --== PLACING ==-- //
 void GameStatePlacing()
 {
     game.SetUpMapOverlay();
@@ -245,10 +254,17 @@ void GameStatePlacingTowerChoose()
         }
 
         int towerIndex = Convert.ToInt32(input);
-        TowerData findTower = GameData.AllTowerData[towerIndex - 1];
+        if (game.CanAffordTower(towerIndex) == false)
+        {
+            consoleDisplay.Error("You don't have enough money to afford this tower.");
+            Console.ReadLine();
+
+            return;
+        }
 
         game.SetIsPlacing(true);
         game.SetTowerSelectIndex(towerIndex);
+
         return;
     }
     else
@@ -348,7 +364,7 @@ void GameStatePlacingTowerPlace()
     }
 }
 
-// Selling
+// --== SELLING ==-- //
 void GameStateSelling()
 {
     game.SetUpMapOverlay();
@@ -402,7 +418,7 @@ void GameStateSelling()
     }
 }
 
-// Round Playout
+// --== ROUND PLAYOUT ==-- //
 void GameStateRound()
 {
     game.StartRound();
@@ -411,7 +427,7 @@ void GameStateRound()
     else                   gameState = GameState.Preparation;
 }
 
-// Game End
+// --== GAME END ==-- //
 void GameEndFunc()
 {
     if (game.GetLives() <= 0)
@@ -420,14 +436,34 @@ void GameEndFunc()
         Console.WriteLine("You ran out of all lives, and therefore your base was destroyed.");
         Console.Write("\n");
         Console.WriteLine($"You only made it to round {game.GetCurrentRound()}.");
-
-        if (File.Exists("mapsWon.json") == false) File.Create("mapsWon.json");
-
     }
     else
     {
         consoleDisplay.GameEndText("Game Won");
         Console.WriteLine("You survived all the enemies that were after you, and therefore your base is still intact.");
+
+        MapWonData getMapWonData = mapWonData[selectedMapIndex];
+        
+        switch (selectedDifficulty)
+        {
+            case Difficulty.Easy:
+                mapWonData[selectedMapIndex] = new MapWonData(getMapWonData.MapName, true, getMapWonData.NormalWin, getMapWonData.HardWin);
+                break;
+
+            case Difficulty.Normal:
+                mapWonData[selectedMapIndex] = new MapWonData(getMapWonData.MapName, getMapWonData.EasyWin, true, getMapWonData.HardWin);
+                break;
+
+            case Difficulty.Hard:
+                mapWonData[selectedMapIndex] = new MapWonData(getMapWonData.MapName, getMapWonData.EasyWin, getMapWonData.NormalWin, true);
+                break;
+        }
+
+        JsonSerializerOptions jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        jsonOptions.WriteIndented = true;
+
+        string winDataJSON = JsonSerializer.Serialize(mapWonData, jsonOptions);
+        File.WriteAllText("JSONDATA/MapWonData.json", winDataJSON);
     }
 
     Console.ReadLine();
@@ -435,7 +471,7 @@ void GameEndFunc()
     gameState = GameState.Preparation;
 }
 
-// Other Functions
+// --== OTHER FUNCTIONS ==-- //
 static string StringInput(string prompt)
 {
     Console.Write(prompt);
